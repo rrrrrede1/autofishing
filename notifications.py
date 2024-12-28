@@ -4,7 +4,13 @@ import subprocess
 def get_notifications():
     # 执行 ADB 命令获取通知
     command = ["adb", "shell", "dumpsys", "notification", "--noredact"]
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', errors='ignore')
+
+    # 检查 adb 命令是否成功执行
+    if result.returncode != 0:
+        print(f"运行adb命令时出错：{result.stderr}")
+        return None
+
     return result.stdout
 
 
@@ -12,7 +18,11 @@ def filter_notifications(app_package):
     # 获取所有通知
     notifications = get_notifications()
 
-    # 过滤出特定应用的通知
+    if not notifications:  # 检查是否成功获取到通知
+        print("未找到通知")
+        return []
+
+    # 过滤出通知
     app_notifications = []
     lines = notifications.splitlines()
 
@@ -23,10 +33,12 @@ def filter_notifications(app_package):
     return app_notifications
 
 
-# 示例：过滤特定应用的通知
-app_package = "com.example.app"  # 用你要监听的应用包名替换
+# 过滤通知
+app_package = "com.taobao.idlefish"  # 监听闲鱼
 notifications = filter_notifications(app_package)
 
-for notification in notifications:
-    print(notification)
-#test1
+if notifications:
+    for notification in notifications:
+        print(notification)
+else:
+    print("没有收到通知")
