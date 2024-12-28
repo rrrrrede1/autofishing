@@ -29,3 +29,4 @@ notifications = filter_notifications(app_package)
 
 for notification in notifications:
     print(notification)
+#test
