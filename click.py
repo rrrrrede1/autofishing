@@ -1,20 +1,25 @@
+import json
 from appium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from appium.options.android import UiAutomator2Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-# 配置 Desired Capabilities
-capabilities = {
-    "platformName": "Android",
-    "platformVersion": "10",
-    "deviceName": "VED7N18526003557",
-    "appPackage": "com.taobao.idlefish",
-    "appActivity": ".maincontainer.activity.MainActivity",
-    "noReset": True,
-    "skipServerInstallation": True,
-    "appium:skipDeviceInitialization": True
-}
+# 加载外部 JSON 文件中的 capabilities 配置
+def load_capabilities_from_file(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            capabilities = json.load(file)
+        print(f"成功加载配置：{capabilities}")
+        return capabilities
+    except Exception as e:
+        print(f"加载配置失败，原因：{e}")
+        return None
+
+# 加载 capabilities
+capabilities = load_capabilities_from_file("capabilities.json")
+if not capabilities:
+    exit("无法加载配置，程序退出。")
 
 # 创建 UiAutomator2Options 对象并加载 capabilities
 options = UiAutomator2Options().load_capabilities(capabilities)

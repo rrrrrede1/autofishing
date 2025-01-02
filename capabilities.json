@@ -1,0 +1,10 @@
+{
+    "platformName": "Android",
+    "platformVersion": "10",
+    "deviceName": "VED7N18526003557",
+    "appPackage": "com.taobao.idlefish",
+    "appActivity": ".maincontainer.activity.MainActivity",
+    "noReset": true,
+    "skipServerInstallation": true,
+    "appium:skipDeviceInitialization": true
+}
