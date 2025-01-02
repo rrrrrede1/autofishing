@@ -3,36 +3,31 @@ import time
 
 # 监控闲鱼
 app_package = "com.taobao.idlefish"
-app_activity = "com.taobao.idlefish/.maincontainer.activity.MainActivity"  # 主界面 Activity
 adb_path = "adb"  # adb路径
 
-
-# 检查应用是否在前台
-def is_app_in_foreground(package_name):
+# 检查应用是否在后台运行
+def is_app_running(package_name):
     result = subprocess.run(
-        ['adb', 'shell', 'dumpsys', 'activity', 'activities'],
+        [adb_path, "shell", "pidof", package_name],
         capture_output=True, text=True
     )
-    return package_name in result.stdout and 'mResumedActivity' in result.stdout
+    return result.returncode == 0 and result.stdout.strip()
 
-
-# 启动应用
-def start_app(package_name, activity):
-    command = [adb_path, "shell", "am", "start", "-n", activity]
-    print(f"启动应用：{command}")
+# 启动应用到后台
+def start_app_in_background(package_name):
+    command = [adb_path, "shell", "monkey", "-p", package_name, "-c", "android.intent.category.LAUNCHER", "1"]
+    print(f"启动应用到后台：{command}")
     subprocess.run(command)
 
-
-# 确保应用在前台
-def bring_app_to_foreground(package_name):
-    if not is_app_in_foreground(package_name):
-        print(f"{package_name} 不在前台，正在将其带到前台...")
-        start_app(package_name, app_activity)
+# 确保应用运行
+def ensure_app_in_background(package_name):
+    if not is_app_running(package_name):
+        print(f"{package_name} 未运行，启动应用到后台...")
+        start_app_in_background(package_name)
     else:
-        print(f"{package_name} 已经在前台，无需重新启动。")
+        print(f"{package_name} 已在后台运行。")
 
-
-# 循环监控应用状态
+# 主程序
 while True:
-    bring_app_to_foreground(app_package)
+    ensure_app_in_background(app_package)
     time.sleep(10)
