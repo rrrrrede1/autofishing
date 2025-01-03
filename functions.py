@@ -10,87 +10,87 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
 
-def load_capabilities_from_file(file_path):
+def load_caps(path):
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            capabilities = json.load(file)
-        print(f"成功加载配置：{capabilities}")
-        return capabilities
+        with open(path, 'r', encoding='utf-8') as f:
+            caps = json.load(f)
+        print(f"成功加载配置：{caps}")
+        return caps
     except Exception as e:
-        print(f"加载配置失败，原因：{e}")
+        print(f"加载配置失败：{e}")
         return None
 
 
-def load_yaml_from_file(file_path):
+def load_yaml(path):
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            data = yaml.load(file, Loader=yaml.FullLoader)
-        print(f"成功加载 YAML 文件：{file_path}")
+        with open(path, 'r', encoding='utf-8') as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        print(f"成功加载 YAML：{path}")
         return data
     except Exception as e:
-        print(f"加载 YAML 文件失败，原因：{e}")
+        print(f"加载 YAML 失败：{e}")
         return None
 
 
-def get_notifications():
-    command = ["adb", "shell", "dumpsys", "notification", "--noredact"]
-    result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', errors='ignore')
+def get_notif():
+    cmd = ["adb", "shell", "dumpsys", "notification", "--noredact"]
+    res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='ignore')
 
-    if result.returncode != 0:
-        print(f"运行adb命令时出错：{result.stderr}")
+    if res.returncode != 0:
+        print(f"运行 adb 出错：{res.stderr}")
         return None
 
-    return result.stdout
+    return res.stdout
 
 
-def extract_notification_details(notification_data):
-    notifications = []
-    notification_pattern = r'android\.title=String \((.*?)\).*?android\.text=String \((.*?)\)'
+def extract_notif(data):
+    notifs = []
+    pattern = r'android\.title=String \((.*?)\).*?android\.text=String \((.*?)\)'
 
-    matches = re.findall(notification_pattern, notification_data, re.DOTALL)
-    for match in matches:
-        title, text = match
-        notifications.append({'title': title, 'text': text})
+    matches = re.findall(pattern, data, re.DOTALL)
+    for m in matches:
+        title, text = m
+        notifs.append({'title': title, 'text': text})
 
-    return notifications
+    return notifs
 
 
-def launch_activity(package_name, activity_name):
+def start_activity(pkg, act):
     try:
-        command = f"adb shell am start -n {package_name}/{activity_name}"
-        print(f"启动应用命令：{command}")
+        cmd = f"adb shell am start -n {pkg}/{act}"
+        print(f"启动命令：{cmd}")
         import os
-        os.system(command)
+        os.system(cmd)
     except Exception as e:
-        print(f"启动 Activity 失败，原因：{e}")
+        print(f"启动失败：{e}")
 
 
-def click_element(driver, selector, timeout=10):
+def click(driver, sel, timeout=10):
     try:
-        element = WebDriverWait(driver, timeout).until(
-            EC.element_to_be_clickable((AppiumBy.ANDROID_UIAUTOMATOR, selector))
+        el = WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((AppiumBy.ANDROID_UIAUTOMATOR, sel))
         )
-        element.click()
-        print(f"成功点击元素：{selector}")
+        el.click()
+        print(f"点击成功：{sel}")
     except Exception as e:
-        print(f"点击元素失败，原因：{e}")
+        print(f"点击失败：{e}")
 
 
-def get_content_desc_from_page(driver, timeout=10):
+def get_desc(driver):
     try:
-        elements = driver.find_elements(AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().descriptionContains("")')
-        content_desc_list = []
-        for element in elements:
-            content_desc = element.get_attribute("content-desc")
-            if content_desc:
-                content_desc_list.append(content_desc)
-        return content_desc_list
+        els = driver.find_elements(AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().descriptionContains("")')
+        desc_list = []
+        for el in els:
+            desc = el.get_attribute("content-desc")
+            if desc:
+                desc_list.append(desc)
+        return desc_list
     except Exception as e:
-        print(f"获取 content-desc 失败，原因：{e}")
+        print(f"获取 content-desc 失败：{e}")
         return []
 
 
-def find_link_from_yaml(content_desc_list, yaml_data):
+def find_link(desc_list, yaml_data):
     for entry in yaml_data:
         text = entry.get('text')
         link = entry.get('link')
@@ -98,40 +98,39 @@ def find_link_from_yaml(content_desc_list, yaml_data):
         if not text or not link:
             continue
 
-        for content_desc in content_desc_list:
-            if text in content_desc:
-                print(f"匹配成功：content-desc='{content_desc}' 对应 text='{text}'")
+        for desc in desc_list:
+            if text in desc:
+                print(f"匹配成功：content-desc='{desc}' 对应 text='{text}'")
                 return link
     return None
 
 
-def set_clipboard_text(driver, text):
+def set_clipboard(driver, text):
     driver.set_clipboard(text.encode('utf-8'))
-    print(f"成功将文本 '{text}' 设置到剪贴板。")
+    print(f"剪贴板设置成功：{text}")
 
 
-def paste(driver, link):
+def paste_text(driver, text):
     try:
-        element = driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().description("想跟TA说点什么...")')
-        element.click()
+        el = driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().description("想跟TA说点什么...")')
+        el.click()
 
         actions = ActionChains(driver)
-        actions.send_keys(link).perform()
+        actions.send_keys(text).perform()
 
-        print("成功模拟 Ctrl+V 粘贴操作")
-
+        print("粘贴操作成功")
     except Exception as e:
-        print(f"操作失败，原因：{e}")
+        print(f"粘贴失败：{e}")
 
 
-def go_back_to_main_activity(driver, target_activity=".maincontainer.activity.MainActivity", max_attempts=5):
-    attempts = 0
-    while attempts < max_attempts:
-        current_activity = driver.current_activity
-        print(f"当前 Activity: {current_activity}")
-        if current_activity == target_activity:
-            print(f"已经返回到目标界面：{target_activity}")
+def back_to_main(driver, target=".maincontainer.activity.MainActivity", max_tries=5):
+    tries = 0
+    while tries < max_tries:
+        curr = driver.current_activity
+        print(f"当前 Activity: {curr}")
+        if curr == target:
+            print(f"已返回主界面：{target}")
             return
         driver.back()
-        attempts += 1
-    print(f"未能返回到目标界面，当前 Activity: {driver.current_activity}")
+        tries += 1
+    print(f"未返回主界面，当前 Activity: {driver.current_activity}")
